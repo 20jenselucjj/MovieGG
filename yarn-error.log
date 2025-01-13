@@ -1,0 +1,173 @@
+Arguments: 
+  /usr/local/share/nvm/versions/node/v20.12.1/bin/node /usr/share/yarn/bin/yarn.js start
+
+PATH: 
+  /opt/git/bin:/home/codespace/.dotnet:/home/codespace/nvm/current/bin:/home/codespace/.php/current/bin:/home/codespace/.python/current/bin:/home/codespace/java/current/bin:/home/codespace/.ruby/current/bin:/home/codespace/.local/bin:/usr/local/python/current/bin:/usr/local/py-utils/bin:/usr/local/oryx:/usr/local/go/bin:/go/bin:/usr/local/sdkman/bin:/usr/local/sdkman/candidates/java/current/bin:/usr/local/sdkman/candidates/gradle/current/bin:/usr/local/sdkman/candidates/maven/current/bin:/usr/local/sdkman/candidates/ant/current/bin:/usr/local/rvm/gems/default/bin:/usr/local/rvm/gems/default@global/bin:/usr/local/rvm/rubies/default/bin:/usr/local/share/rbenv/bin:/usr/local/php/current/bin:/opt/conda/bin:/usr/local/nvs:/usr/local/share/nvm/current/bin:/usr/local/hugo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/share/dotnet:~/.dotnet/tools
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  20.12.1
+
+Platform: 
+  linux x64
+
+Trace: 
+  SyntaxError: /project/workspace/package.json: Unexpected token 'c', "const genr"... is not valid JSON
+      at JSON.parse (<anonymous>)
+      at /usr/share/yarn/lib/cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (/usr/share/yarn/lib/cli.js:310:30)
+      at /usr/share/yarn/lib/cli.js:321:13
+
+npm manifest: 
+  const genreSelect = document.getElementById('genre');
+  const discoverButton = document.getElementById('discover-button');
+  const checkmarkContainer = document.getElementById('checkmark-container');
+  const errorMessage = document.getElementById('error-message');
+  const movieResult = document.getElementById('movie-result');
+  const loadingSpinner = document.getElementById('loading-spinner'); // Get the spinner element
+  
+  const apiKey = '4097e111160ea3c27318e80b04263a31'; // TMDb API key
+  let displayedMovies = []; // Track movies that have already been displayed
+  
+  const fetchWithErrorHandling = async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+      }
+      return response.json();
+  };
+  
+  discoverButton.addEventListener('click', async () => {
+      const selectedGenre = genreSelect.value;
+  
+      if (!selectedGenre) {
+          errorMessage.textContent = 'Please select a genre first';
+          errorMessage.classList.remove('hidden');
+          return;
+      }
+  
+      discoverButton.disabled = true;
+      discoverButton.textContent = 'Searching...';
+      errorMessage.classList.add('hidden');
+      checkmarkContainer.classList.add('hidden');
+      movieResult.innerHTML = ''; // Clear previous movie result
+      loadingSpinner.classList.remove('hidden'); // Show the spinner
+  
+      try {
+          // Fetch movies for the selected genre with a rating >= 6.5 and exclude adult content
+          const discoverData = await fetchWithErrorHandling(
+              `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${selectedGenre}&vote_average.gte=6.5&include_adult=false`
+          );
+  
+          if (discoverData.results.length === 0) {
+              throw new Error('No movies found with a rating of 6.5/10 or higher.');
+          }
+  
+          // Filter out already displayed movies
+          const availableMovies = discoverData.results.filter(
+              (movie) => !displayedMovies.includes(movie.id)
+          );
+  
+          if (availableMovies.length === 0) {
+              throw new Error('No new movies found with a rating of 6.5/10 or higher.');
+          }
+  
+          // Randomly select a movie from the filtered list
+          const randomIndex = Math.floor(Math.random() * availableMovies.length);
+          const randomMovie = availableMovies[randomIndex];
+  
+          // Add the selected movie to the displayedMovies list
+          displayedMovies.push(randomMovie.id);
+  
+          // Fetch detailed information about the selected movie
+          const movieDetails = await fetchWithErrorHandling(
+              `https://api.themoviedb.org/3/movie/${randomMovie.id}?api_key=${apiKey}`
+          );
+  
+          // Fetch credits (director and cast) for the selected movie
+          const creditsData = await fetchWithErrorHandling(
+              `https://api.themoviedb.org/3/movie/${randomMovie.id}/credits?api_key=${apiKey}`
+          );
+  
+          // Fetch videos (trailers) for the selected movie
+          const videosData = await fetchWithErrorHandling(
+              `https://api.themoviedb.org/3/movie/${randomMovie.id}/videos?api_key=${apiKey}`
+          );
+  
+          // Find the director
+          const director = creditsData.crew.find((person) => person.job === 'Director')?.name || 'Not available';
+  
+          // Get the top 5 cast members
+          const cast = creditsData.cast.slice(0, 5).map((actor) => actor.name).join(', ') || 'Not available';
+  
+          // Find the first trailer (if available)
+          const trailer = videosData.results.find((video) => video.type === 'Trailer' && video.site === 'YouTube');
+  
+          // Display the selected movie
+          movieResult.innerHTML = `
+              <div class="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                  <div class="md:flex">
+                      <div class="md:w-1/2">
+                          <img
+                              src="${movieDetails.poster_path ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}` : 'https://placehold.co/300x445'}"
+                              alt="${movieDetails.title}"
+                              class="w-full h-full object-cover"
+                          />
+                      </div>
+                      <div class="p-6 md:w-1/2">
+                          <h2 class="text-2xl font-bold mb-2 font-serif">${movieDetails.title}</h2>
+                          <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                              <span>${movieDetails.release_date}</span>
+                              <span>•</span>
+                              <span>${movieDetails.runtime} mins</span>
+                              <span>•</span>
+                              <span>${movieDetails.genres.map(genre => genre.name).join(', ')}</span>
+                          </div>
+                          <p class="text-gray-300 mb-4">${movieDetails.overview}</p>
+                          <div class="space-y-2">
+                              <p class="text-gray-400"><span class="font-semibold">Director:</span> ${director}</p>
+                              <p class="text-gray-400"><span class="font-semibold">Cast:</span> ${cast}</p>
+                              <div class="flex items-center gap-2">
+                                  <span class="text-yellow-500">★</span>
+                                  <span class="font-semibold">${movieDetails.vote_average.toFixed(1)}</span>
+                                  <span class="text-gray-400">/ 10</span>
+                              </div>
+                              ${trailer ? `
+                                  <div class="mt-4">
+                                      <h3 class="text-lg font-semibold mb-2">Trailer</h3>
+                                      <iframe
+                                          width="100%"
+                                          height="315"
+                                          src="https://www.youtube.com/embed/${trailer.key}"
+                                          frameborder="0"
+                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                          allowfullscreen
+                                      ></iframe>
+                                  </div>
+                              ` : '<p class="text-gray-400">No trailer available.</p>'}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+  
+          checkmarkContainer.classList.remove('hidden');
+      } catch (err) {
+          errorMessage.textContent = `Error: ${err.message}`;
+          errorMessage.classList.remove('hidden');
+          movieResult.innerHTML = '<p class="text-xl">Select a genre to discover your next favorite movie</p>';
+      } finally {
+          loadingSpinner.classList.add('hidden'); // Hide the spinner
+          discoverButton.disabled = false;
+          discoverButton.textContent = 'Discover Movie';
+      }
+  });
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

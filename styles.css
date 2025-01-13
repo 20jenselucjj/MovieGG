@@ -1,0 +1,107 @@
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+@keyframes wiggle {
+  0%, 100% {
+      transform: rotate(0deg);
+  }
+  25% {
+      transform: rotate(-5deg);
+  }
+  50% {
+      transform: rotate(5deg);
+  }
+  75% {
+      transform: rotate(-5deg);
+  }
+}
+
+.wiggle:hover {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+.container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.container {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  font-size: 25px;
+  user-select: none;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.checkmark {
+  position: relative;
+  display: block;
+  height: 1.3em;
+  width: 1.3em;
+  background: #1a1a1a;
+  border-radius: 50px;
+  transition: all 0.7s;
+  --spread: 20px;
+}
+
+.container input:checked ~ .checkmark {
+  background: #1a1a1a;
+  box-shadow: -10px -10px var(--spread) 0px #5B51D8, 
+              0 -10px var(--spread) 0px #833AB4, 
+              10px -10px var(--spread) 0px #E1306C, 
+              10px 0 var(--spread) 0px #FD1D1D, 
+              10px 10px var(--spread) 0px #F77737, 
+              0 10px var(--spread) 0px #FCAF45, 
+              -10px 10px var(--spread) 0px #FFDC80;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.container .checkmark:after {
+  left: 50%; /* Center horizontally */
+  top: 50%; /* Center vertically */
+  width: 0.25em; /* Width of the checkmark */
+  height: 0.5em; /* Height of the checkmark */
+  border: solid #f0f0f0;
+  border-width: 0 0.15em 0.15em 0;
+  transform: translate(-50%, -50%) rotate(45deg); /* Center and rotate */
+}
+/* Loading Spinner */
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid #ffffff;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
+}
+
+#loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
