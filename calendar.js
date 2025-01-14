@@ -17,8 +17,8 @@ const errorMessage = document.getElementById("error-message");
 
 // Functions
 function getMonthDates(year, month) {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+  const startDate = new Date(Date.UTC(year, month - 1, 1));
+  const endDate = new Date(Date.UTC(year, month, 0));
   return {
     start: startDate.toISOString().split("T")[0],
     end: endDate.toISOString().split("T")[0],
@@ -71,7 +71,7 @@ async function fetchMovies(year, month) {
         console.log(`Movie ${movie.title} has no release date.`);
         return false;
       }
-      const releaseDate = new Date(movie.release_date);
+      const releaseDate = new Date(movie.release_date + "T00:00:00Z");
       if (isNaN(releaseDate.getTime())) {
         console.log(
           `Movie ${movie.title} has invalid release date: ${movie.release_date}`
