@@ -78,7 +78,7 @@ async function fetchMovies(year, month) {
         );
         return false;
       }
-      const monthCheck = releaseDate.getMonth() === month;
+      const monthCheck = releaseDate.getMonth() === month - 1;
       const yearCheck = releaseDate.getFullYear() === year;
       return monthCheck && yearCheck;
     });
@@ -104,9 +104,11 @@ function renderMovies(movies) {
     movies.forEach((movie) => {
       const movieElement = document.createElement("div");
       movieElement.className = "movie";
-      const posterPath = movie.poster_path || "/path/to/default/poster.jpg";
+      const posterPath = movie.poster_path
+        ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`
+        : "https://via.placeholder.com/185";
       movieElement.innerHTML = `
-        <img src="https://image.tmdb.org/t/p/w185${posterPath}" alt="${movie.title}" loading="lazy">
+      <img src="${posterPath}" alt="${movie.title}" loading="lazy">
         <h3>${movie.title}</h3>
         <p>Release Date: ${movie.release_date}</p>
       `;
