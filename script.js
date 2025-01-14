@@ -27,7 +27,7 @@ const adjustImageSize = (img) => {
   }
 };
 
-// Load genres from data.json
+// Load genres from data.json based on the selected media type
 const loadGenres = async () => {
   try {
     const response = await fetch("./data.json"); // Ensure the path is correct
@@ -35,7 +35,9 @@ const loadGenres = async () => {
       throw new Error("Failed to load genres");
     }
     const data = await response.json();
-    populateGenreSelect(data.genres);
+    const selectedMediaType = mediaTypeSelect.value; // Get the selected media type
+    const genres = data.genres[selectedMediaType]; // Load genres based on media type
+    populateGenreSelect(genres);
   } catch (err) {
     console.error("Error loading genres:", err);
   }
@@ -43,6 +45,7 @@ const loadGenres = async () => {
 
 // Populate the genre dropdown
 const populateGenreSelect = (genres) => {
+  genreSelect.innerHTML = '<option value="">Select a genre</option>'; // Clear existing options
   genres.forEach((genre) => {
     const option = document.createElement("option");
     option.value = genre.id;
@@ -328,3 +331,8 @@ discoverButton.addEventListener("click", async () => {
 
 // Load genres when the page loads
 loadGenres();
+
+// Reload genres when the media type changes
+mediaTypeSelect.addEventListener("change", () => {
+  loadGenres();
+});
