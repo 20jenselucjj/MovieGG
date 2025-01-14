@@ -1,11 +1,12 @@
 const genreSelect = document.getElementById("genre");
+const mediaTypeSelect = document.getElementById("media-type");
 const discoverButton = document.getElementById("discover-button");
 const checkmarkContainer = document.getElementById("checkmark-container");
 const errorMessage = document.getElementById("error-message");
 const movieResult = document.getElementById("movie-result");
 
 const apiKey = "4097e111160ea3c27318e80b04263a31"; // TMDb API key
-let displayedMovies = []; // Track movies that have already been displayed
+let displayedMedia = []; // Track media that has already been displayed
 
 // Function to adjust the image size dynamically
 const adjustImageSize = (img) => {
@@ -29,7 +30,7 @@ const adjustImageSize = (img) => {
 // Load genres from data.json
 const loadGenres = async () => {
   try {
-    const response = await fetch("data.json");
+    const response = await fetch("./data.json"); // Ensure the path is correct
     if (!response.ok) {
       throw new Error("Failed to load genres");
     }
@@ -48,12 +49,6 @@ const populateGenreSelect = (genres) => {
     option.textContent = genre.name;
     genreSelect.appendChild(option);
   });
-
-  // Add the "Japanese Anime" option manually
-  const japaneseAnimeOption = document.createElement("option");
-  japaneseAnimeOption.value = "16-ja";
-  japaneseAnimeOption.textContent = "Japanese Anime";
-  genreSelect.appendChild(japaneseAnimeOption);
 };
 
 // Fetch data with error handling
@@ -65,9 +60,32 @@ const fetchWithErrorHandling = async (url) => {
   return response.json();
 };
 
-// Event listener for the "Discover Movie" button
+// Get the rating for a movie or TV show
+const getRating = async (mediaType, mediaId) => {
+  if (mediaType === "movie") {
+    const releaseData = await fetchWithErrorHandling(
+      `https://api.themoviedb.org/3/movie/${mediaId}/release_dates?api_key=${apiKey}`
+    );
+    const usRelease = releaseData.results.find(
+      (release) => release.iso_3166_1 === "US"
+    );
+    return usRelease?.release_dates[0]?.certification || null;
+  } else if (mediaType === "tv") {
+    const contentRatings = await fetchWithErrorHandling(
+      `https://api.themoviedb.org/3/tv/${mediaId}/content_ratings?api_key=${apiKey}`
+    );
+    const usRating = contentRatings.results.find(
+      (rating) => rating.iso_3166_1 === "US"
+    );
+    return usRating?.rating || null;
+  }
+  return null;
+};
+
+// Event listener for the "Discover" button
 discoverButton.addEventListener("click", async () => {
   const selectedGenre = genreSelect.value;
+  const selectedMediaType = mediaTypeSelect.value;
 
   if (!selectedGenre) {
     errorMessage.textContent = "Please select a genre first";
@@ -82,44 +100,78 @@ discoverButton.addEventListener("click", async () => {
   movieResult.innerHTML = "";
 
   try {
-    let apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&vote_average.gte=6.5&include_adult=false`;
+    let apiUrl = `https://api.themoviedb.org/3/discover/${selectedMediaType}?api_key=${apiKey}&include_adult=false`;
 
     // Add genre and language filter for Japanese Anime
     if (selectedGenre === "16-ja") {
-      apiUrl += "&with_genres=16&with_original_language=ja"; // Filter for Japanese anime movies
+      apiUrl += "&with_genres=16&with_original_language=ja"; // Filter for Japanese anime
       apiUrl += "&with_keywords=210024|287501"; // Add anime-related keywords
     } else {
       apiUrl += `&with_genres=${selectedGenre}`; // Filter for other genres
     }
 
+    // Lower the rating threshold for TV shows
+    if (selectedMediaType === "tv") {
+      apiUrl += "&vote_average.gte=5"; // Lower threshold for TV shows
+    } else {
+      apiUrl += "&vote_average.gte=6.5"; // Keep higher threshold for movies
+    }
+
+    console.log("API URL:", apiUrl); // Debugging: Log the API URL
+
     const discoverData = await fetchWithErrorHandling(apiUrl);
 
+    console.log("API Response:", discoverData); // Debugging: Log the API response
+
     if (discoverData.results.length === 0) {
-      throw new Error("No movies found with a rating of 6.5/10 or higher.");
+      throw new Error("No results found. Try a different genre or media type.");
     }
 
-    const availableMovies = discoverData.results.filter(
-      (movie) => !displayedMovies.includes(movie.id)
+    // Filter out media that has already been displayed
+    const availableMedia = discoverData.results.filter(
+      (media) => !displayedMedia.includes(media.id)
     );
 
-    if (availableMovies.length === 0) {
-      throw new Error("No new movies found with a rating of 6.5/10 or higher.");
+    if (availableMedia.length === 0) {
+      throw new Error(
+        "No new results found. Try a different genre or media type."
+      );
     }
 
-    const randomIndex = Math.floor(Math.random() * availableMovies.length);
-    const randomMovie = availableMovies[randomIndex];
-    displayedMovies.push(randomMovie.id);
+    // Try to find a rated media item
+    let randomMedia;
+    let rating;
+    for (let i = 0; i < availableMedia.length; i++) {
+      const randomIndex = Math.floor(Math.random() * availableMedia.length);
+      randomMedia = availableMedia[randomIndex];
+      rating = await getRating(selectedMediaType, randomMedia.id);
 
-    const movieDetails = await fetchWithErrorHandling(
-      `https://api.themoviedb.org/3/movie/${randomMovie.id}?api_key=${apiKey}`
+      if (rating) {
+        break; // Found a rated media item
+      } else {
+        // Skip unrated media and try the next one
+        availableMedia.splice(randomIndex, 1);
+      }
+    }
+
+    if (!rating) {
+      throw new Error(
+        "No rated results found. Try a different genre or media type."
+      );
+    }
+
+    displayedMedia.push(randomMedia.id);
+
+    const mediaDetails = await fetchWithErrorHandling(
+      `https://api.themoviedb.org/3/${selectedMediaType}/${randomMedia.id}?api_key=${apiKey}`
     );
 
     const creditsData = await fetchWithErrorHandling(
-      `https://api.themoviedb.org/3/movie/${randomMovie.id}/credits?api_key=${apiKey}`
+      `https://api.themoviedb.org/3/${selectedMediaType}/${randomMedia.id}/credits?api_key=${apiKey}`
     );
 
     const videosData = await fetchWithErrorHandling(
-      `https://api.themoviedb.org/3/movie/${randomMovie.id}/videos?api_key=${apiKey}`
+      `https://api.themoviedb.org/3/${selectedMediaType}/${randomMedia.id}/videos?api_key=${apiKey}`
     );
 
     const director =
@@ -134,19 +186,19 @@ discoverButton.addEventListener("click", async () => {
       (video) => video.type === "Trailer" && video.site === "YouTube"
     );
 
-    // Display the movie details
+    // Display the media details
     movieResult.innerHTML = `
       <div class="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         <div class="flex flex-col">
-          <!-- Movie Image with Trailer Hint -->
+          <!-- Media Image with Trailer Hint -->
           <div class="movie-image-container">
             <img
               src="${
-                movieDetails.poster_path
-                  ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`
+                mediaDetails.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${mediaDetails.poster_path}`
                   : "https://placehold.co/400x600"
               }"
-              alt="${movieDetails.title}"
+              alt="${mediaDetails.title || mediaDetails.name}"
               class="w-full h-full object-cover"
             />
             <!-- Play Button -->
@@ -183,27 +235,35 @@ discoverButton.addEventListener("click", async () => {
                 : ""
             }
           </div>
-          <!-- Movie Details -->
+          <!-- Media Details -->
           <div class="p-6">
             <h2 class="text-2xl font-bold mb-2 font-serif">${
-              movieDetails.title
+              mediaDetails.title || mediaDetails.name
             }</h2>
             <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
-              <span>${movieDetails.release_date}</span>
+              <span>${
+                mediaDetails.release_date || mediaDetails.first_air_date
+              }</span>
               <span>•</span>
-              <span>${movieDetails.runtime} mins</span>
+              <span>${
+                mediaDetails.runtime ||
+                mediaDetails.episode_run_time?.[0] ||
+                "N/A"
+              } mins</span>
               <span>•</span>
-              <span>${movieDetails.genres
+              <span>${mediaDetails.genres
                 .map((genre) => genre.name)
                 .join(", ")}</span>
+              <span>•</span>
+              <span>Rating: ${rating}</span> <!-- Display the rating -->
             </div>
-            <p class="text-gray-300 mb-4">${movieDetails.overview}</p>
+            <p class="text-gray-300 mb-4">${mediaDetails.overview}</p>
             <div class="space-y-2">
               <p class="text-gray-400"><span class="font-semibold">Director:</span> ${director}</p>
               <p class="text-gray-400"><span class="font-semibold">Cast:</span> ${cast}</p>
               <div class="flex items-center gap-2">
                 <span class="text-yellow-500">★</span>
-                <span class="font-semibold">${movieDetails.vote_average.toFixed(
+                <span class="font-semibold">${mediaDetails.vote_average.toFixed(
                   1
                 )}</span>
                 <span class="text-gray-400">/ 10</span>
@@ -259,10 +319,10 @@ discoverButton.addEventListener("click", async () => {
     errorMessage.textContent = `Error: ${err.message}`;
     errorMessage.classList.remove("hidden");
     movieResult.innerHTML =
-      '<p class="text-xl">Select a genre to discover your next favorite movie</p>';
+      '<p class="text-xl">Select a genre and media type to discover your next favorite</p>';
   } finally {
     discoverButton.disabled = false;
-    discoverButton.textContent = "Discover Movie";
+    discoverButton.textContent = "Discover";
   }
 });
 
