@@ -60,7 +60,7 @@ async function fetchMovies(year, month) {
   }
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&primary_release_date.gte=${dates.start}&primary_release_date.lte=${dates.end}&include_adult=false&with_original_language=en`
+      `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&release_date.gte=${dates.start}&release_date.lte=${dates.end}&include_adult=false&with_original_language=en`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch movies");
