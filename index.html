@@ -23,6 +23,29 @@
           Movie & TV Show Discovery
         </h1>
 
+        <!-- Search Bar -->
+        <div class="flex justify-center mb-8 relative w-full md:w-2/3 mx-auto">
+          <div class="w-full relative">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search for movies or TV shows"
+              class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+            <!-- Search Suggestions Dropdown -->
+            <div
+              id="search-suggestions"
+              class="absolute top-full left-0 w-full bg-gray-800 rounded-lg shadow-lg mt-1 hidden z-10"
+            ></div>
+          </div>
+          <button
+            id="search-button"
+            class="ml-2 py-3 px-6 rounded-lg font-medium transition-all transform hover:scale-105 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            Search
+          </button>
+        </div>
+
         <div class="flex flex-col md:flex-row gap-8">
           <!-- Left Column: Discover Box -->
           <div class="w-full md:w-1/3 space-y-4">
@@ -49,6 +72,75 @@
                 <option value="">Select a genre</option>
                 <!-- Genres will be populated dynamically by script.js -->
               </select>
+
+              <!-- Advanced Filters Toggle Button -->
+              <button
+                id="advanced-filter-toggle"
+                class="w-full py-2 px-4 rounded-lg font-medium transition-all transform hover:scale-105 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-sm"
+              >
+                Advanced Filters
+              </button>
+
+              <!-- Advanced Filters (Hidden by Default) -->
+              <div id="advanced-filters" class="space-y-4 hidden mt-4">
+                <!-- Year Filter -->
+                <div>
+                  <label for="year" class="block text-sm font-medium mb-2"
+                    >Release Year</label
+                  >
+                  <input
+                    type="range"
+                    id="year"
+                    min="1900"
+                    max="2023"
+                    value="2023"
+                    class="w-full"
+                  />
+                  <div class="flex justify-between text-sm text-gray-400 mt-1">
+                    <span>1900</span>
+                    <span id="year-value">2023</span>
+                  </div>
+                </div>
+
+                <!-- Rating Filter -->
+                <div>
+                  <label for="rating" class="block text-sm font-medium mb-2"
+                    >Minimum Rating</label
+                  >
+                  <input
+                    type="range"
+                    id="rating"
+                    min="0"
+                    max="10"
+                    value="0"
+                    step="0.1"
+                    class="w-full"
+                  />
+                  <div class="flex justify-between text-sm text-gray-400 mt-1">
+                    <span>0</span>
+                    <span id="rating-value">0</span>
+                  </div>
+                </div>
+
+                <!-- Popularity Filter -->
+                <div>
+                  <label for="popularity" class="block text-sm font-medium mb-2"
+                    >Minimum Popularity</label
+                  >
+                  <input
+                    type="range"
+                    id="popularity"
+                    min="0"
+                    max="1000"
+                    value="0"
+                    class="w-full"
+                  />
+                  <div class="flex justify-between text-sm text-gray-400 mt-1">
+                    <span>0</span>
+                    <span id="popularity-value">0</span>
+                  </div>
+                </div>
+              </div>
 
               <button
                 id="discover-button"
