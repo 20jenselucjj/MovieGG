@@ -1,4 +1,4 @@
-const apiKey = "4097e111160ea3c27318e80b04263a31";
+const apiKey = "5a6c802c8add70016329db08b4995810";
 
 // Initialize to the current month and year
 let today = new Date();
@@ -52,45 +52,34 @@ function setCachedData(year, month, data) {
 }
 
 async function fetchMovies(year, month) {
-  const dates = getMonthDates(year, month);
-  const cachedMovies = getCachedData(year, month);
-  if (cachedMovies) {
-    renderMovies(cachedMovies);
-    return;
-  }
-  try {
-    const response = await fetch(
-      `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&release_date.gte=${dates.start}&release_date.lte=${dates.end}&include_adult=false&with_original_language=en`
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch movies");
+    const dates = getMonthDates(year, month);
+    const cachedMovies = getCachedData(year, month);
+    if (cachedMovies) {
+      renderMovies(cachedMovies);
+      return;
     }
-    const data = await response.json();
-    const movies = data.results.filter((movie) => {
-      if (!movie.release_date) {
-        console.log(`Movie ${movie.title} has no release date.`);
-        return false;
+  
+    try {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&release_date.gte=${dates.start}&release_date.lte=${dates.end}&include_adult=false&with_original_language=en`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch movies");
       }
-      const releaseDate = new Date(movie.release_date + "T00:00:00Z");
-      if (isNaN(releaseDate.getTime())) {
-        console.log(
-          `Movie ${movie.title} has invalid release date: ${movie.release_date}`
-        );
-        return false;
-      }
-      const monthCheck = releaseDate.getMonth() === month - 1;
-      const yearCheck = releaseDate.getFullYear() === year;
-      return monthCheck && yearCheck;
-    });
-    setCachedData(year, month, movies);
-    renderMovies(movies);
-  } catch (error) {
-    console.error("Error fetching movies:", error);
-    errorMessage.classList.remove("hidden");
-    loading.classList.add("hidden");
+      const data = await response.json();
+  
+      // Remove filtering logic and use all movies returned by the API
+      const movies = data.results;
+  
+      // Cache and render the movies
+      setCachedData(year, month, movies);
+      renderMovies(movies);
+    } catch (error) {
+      console.error("Error fetching movies:", error);
+      errorMessage.classList.remove("hidden");
+      loading.classList.add("hidden");
+    }
   }
-}
-
 function renderMovies(movies) {
   moviesList.innerHTML = "";
 
@@ -155,6 +144,7 @@ nextMonthButton.addEventListener("click", () => {
     currentMonth = 1;
     currentYear++;
   }
+
   updateCalendar();
 });
 

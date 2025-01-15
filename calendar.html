@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Upcoming Releases Calendar</title>
-    <!-- Include Tailwind CSS and other styles -->
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
@@ -17,50 +17,46 @@
   <body class="bg-gray-900 text-white">
     <!-- Header -->
     <header class="p-4">
-      <h1 class="text-2xl font-bold text-center">Upcoming Releases Calendar</h1>
+      <h1 class="text-xl sm:text-2xl font-bold text-center">Upcoming Releases Calendar</h1>
     </header>
 
     <!-- Navigation -->
-    <nav class="flex justify-center mb-8">
-      <a href="index.html" class="mr-4 text-purple-400 hover:text-pink-600"
-        >Home</a
-      >
-      <a href="calendar.html" class="text-purple-400 hover:text-pink-600"
-        >Calendar</a
-      >
+    <nav class="flex justify-center mb-4 p-4">
+      <a href="index.html" class="mr-4 text-purple-400 hover:text-pink-600">Home</a>
+      <a href="calendar.html" class="text-purple-400 hover:text-pink-600">Calendar</a>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto p-8">
-        <h2 id="calendar-header" class="text-2xl font-bold mb-4"></h2>
-        <div class="flex justify-between mb-4">
-          <button
-            id="prev-month"
-            class="py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:bg-gradient-to-l hover:from-purple-600 hover:to-pink-600"
-            aria-label="Previous Month"
-          >
-            Previous Month
-          </button>
-          <button
-            id="next-month"
-            class="py-2 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded hover:bg-gradient-to-l hover:from-pink-600 hover:to-purple-600"
-            aria-label="Next Month"
-          >
-            Next Month
-          </button>
-        </div>
-        <div id="loading" class="text-center mb-4">
-          <div class="loader"></div>
-          <p>Loading movies...</p>
-        </div>
-        <div
-          id="movies-list"
-          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        ></div>
-        <div id="error-message" class="text-center text-red-500 mb-4 hidden">
-          Error fetching movies. Please try again later.
-        </div>
-      </main>
+    <main class="max-w-4xl mx-auto p-4 sm:p-8">
+      <h2 id="calendar-header" class="text-xl sm:text-2xl font-bold mb-4 text-center"></h2>
+      <div class="flex justify-between mb-4 p-4">
+        <button
+          id="prev-month"
+          class="py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:bg-gradient-to-l hover:from-purple-600 hover:to-pink-600 text-sm sm:text-base"
+          aria-label="Previous Month"
+        >
+          Previous Month
+        </button>
+        <button
+          id="next-month"
+          class="py-2 px-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded hover:bg-gradient-to-l hover:from-pink-600 hover:to-purple-600 text-sm sm:text-base"
+          aria-label="Next Month"
+        >
+          Next Month
+        </button>
+      </div>
+      <div id="loading" class="text-center mb-4">
+        <div class="loader"></div>
+        <p class="text-sm sm:text-base">Loading movies...</p>
+      </div>
+      <div
+        id="movies-list"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4"
+      ></div>
+      <div id="error-message" class="text-center text-red-500 mb-4 hidden">
+        Error fetching movies. Please try again later.
+      </div>
+    </main>
 
     <!-- Footer -->
     <footer class="p-4 text-center">
