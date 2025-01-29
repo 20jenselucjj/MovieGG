@@ -1,4 +1,4 @@
-const apiKey = "4097e111160ea3c27318e80b04263a31"; // Use same API key as script.js
+const apiKey = "5a6c802c8add70016329db08b4995810"; // Use same API key as script.js
 
 // Display user-friendly error
 const showError = (message) => {
