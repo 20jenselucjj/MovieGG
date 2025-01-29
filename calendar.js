@@ -62,7 +62,7 @@ function getCachedData(year, month) {
     const { data, timestamp } = JSON.parse(cached);
     if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
       return data;
-     }
+    }
   }
   return null;
 }
@@ -95,7 +95,7 @@ async function fetchMovies(year, month) {
     return;
   }
   try {
-    const url = `https://api.themoviedb.org/3/discover/movie?primary_release_date.gte=${dates.start}&primary_release_date.lte=${dates.end}&sort_by=primary_release_date.asc`;
+    const url = `http://localhost:8000/3/discover/movie?primary_release_date.gte=${dates.start}&primary_release_date.lte=${dates.end}&sort_by=primary_release_date.asc`;
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
