@@ -1,4 +1,4 @@
-const apiKey = process.env.TMDB_API_KEY || "5a6c802c8add70016329db08b4995810";
+const apiKey = "4097e111160ea3c27318e80b04263a31"; // Use same API key as script.js
 
 // Display user-friendly error
 const showError = (message) => {
@@ -30,8 +30,8 @@ const errorMessage = document.getElementById("error-message");
  * @returns {Object} - An object containing the start and end dates in YYYY-MM-DD format.
  */
 function getMonthDates(year, month) {
-  const startDate = new Date(year, month - 1, 1); // Start of the month in local time
-  const endDate = new Date(year, month, 0); // End of the month in local time
+  const startDate = new Date(Date.UTC(year, month - 1, 1)); // Start of the month in UTC
+  const endDate = new Date(Date.UTC(year, month, 0)); // End of the month in UTC
   return {
     start: startDate.toISOString().split("T")[0], // Format as YYYY-MM-DD
     end: endDate.toISOString().split("T")[0], // Format as YYYY-MM-DD
@@ -62,7 +62,7 @@ function getCachedData(year, month) {
     const { data, timestamp } = JSON.parse(cached);
     if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
       return data;
-    }
+     }
   }
   return null;
 }
@@ -95,26 +95,37 @@ async function fetchMovies(year, month) {
     return;
   }
   try {
-    const response = await fetch(
-      `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&release_date.gte=${dates.start}&release_date.lte=${dates.end}&include_adult=false&with_original_language=en`
-    );
+    const url = `https://api.themoviedb.org/3/discover/movie?primary_release_date.gte=${dates.start}&primary_release_date.lte=${dates.end}&sort_by=primary_release_date.asc`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json'
+      }
+    });
     if (!response.ok) {
-      throw new Error(
-"Failed to fetch movies. Please try again later.");
+      throw new Error("Failed to fetch movies. Please try again later.");
     }
     const data = await response.json();
+    if (!data.results) {
+      throw new Error("Invalid API response format");
+    }
     const movies = data.results.filter((movie) => {
       if (!movie.release_date) {
         console.log(`Movie ${movie.title} has no release date.`);
         return false;
       }
-      const releaseDate = new Date(movie.release_date);
+      const releaseDate = new Date(movie.release_date + "T00:00:00Z"); // Parse as UTC
       if (isNaN(releaseDate.getTime())) {
         console.log(`Movie ${movie.title} has invalid release date: ${movie.release_date}`);
         return false;
       }
-      return releaseDate.getMonth() === month - 1 && releaseDate.getFullYear() === year;
-    }); 
+      return (
+        releaseDate.getUTCMonth() === month - 1 &&
+        releaseDate.getUTCFullYear() === year &&
+        releaseDate.toISOString().split("T")[0] <= dates.end &&
+        releaseDate.toISOString().split("T")[0] >= dates.start
+      );
+    });
     setCachedData(year, month, movies);
     renderMovies(movies);
   } catch (error) {
@@ -134,7 +145,7 @@ function renderMovies(movies) {
   if (movies.length === 0) {
     moviesList.innerHTML = "<p>No upcoming movies this month.</p>";
   } else {
-    // Sort movies by release date in ascending order
+    // Ensure movies are sorted by release date in ascending order
     movies.sort((a, b) => new Date(a.release_date) - new Date(b.release_date));
 
     // Render movies
@@ -165,6 +176,7 @@ function renderMovies(movies) {
   loading.classList.add("hidden");
   errorMessage.classList.add("hidden");
 }
+
 /**
  * Update the calendar header with the current month and year.
  */
@@ -176,15 +188,25 @@ function updateHeader() {
  * Update the calendar to display movies for the current month and year.
  */
 function updateCalendar() {
-  if (isLoading) return;
-  isLoading = true;
-  loading.classList.remove("hidden");
-  moviesList.classList.add("hidden");
-  fetchMovies(currentYear, currentMonth).then(() => {
+  try {
+    if (isLoading) return;
+    isLoading = true;
+    loading.classList.remove("hidden");
+    moviesList.classList.add("hidden");
+    errorMessage.classList.add("hidden");
+
+    fetchMovies(currentYear, currentMonth).then(() => {
+      updateHeader();
+      moviesList.classList.remove("hidden");
+      isLoading = false;
+    }).catch((error) => {
+      showError(error.message);
+      isLoading = false;
+    });
+  } catch (error) {
     updateHeader();
-    moviesList.classList.remove("hidden");
     isLoading = false;
-  });
+  }
 }
 
 // Event Listeners

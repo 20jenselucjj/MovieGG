@@ -36,7 +36,7 @@ const ratingValue = document.getElementById("rating-value");
 const popularityFilter = document.getElementById("popularity");
 const popularityValue = document.getElementById("popularity-value");
 
-const apiKey = process.env.TMDB_API_KEY || "4097e111160ea3c27318e80b04263a31"; // TMDb API key from environment variable
+const apiKey = "5a6c802c8add70016329db08b4995810"; // TMDb API key // TMDb API key from environment variable
 let displayedMedia = []; // Track media that has already been displayed
 
 // Function to adjust the image size dynamically
@@ -90,12 +90,17 @@ const populateGenreSelect = (genres) => {
 // Fetch data with error handling
 const fetchWithErrorHandling = async (url) => {
   try {
-    console.log("Fetching URL:", url); // Log the URL being fetched
-    const response = await fetch(url);
-    console.log("Response Status:", response.status); // Log the response status
+    console.log("Fetching URL:", url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
     if (!response.ok) {
       if (response.status === 429) {
         throw new Error("Rate limit exceeded. Please try again in a moment.");
+      } else if (response.status === 401) {
+        throw new Error("Unable to authenticate with the movie database. Please check back later.");
       }
       throw new Error(`API request failed with status ${response.status}`);
     }
