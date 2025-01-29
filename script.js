@@ -1,3 +1,23 @@
+// Debounce function
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+// Display user-friendly error
+const showError = (message) => {
+  errorMessage.textContent = message;
+  errorMessage.classList.remove("hidden");
+};
+
+
 const genreSelect = document.getElementById("genre");
 const mediaTypeSelect = document.getElementById("media-type");
 const discoverButton = document.getElementById("discover-button");
@@ -16,7 +36,7 @@ const ratingValue = document.getElementById("rating-value");
 const popularityFilter = document.getElementById("popularity");
 const popularityValue = document.getElementById("popularity-value");
 
-const apiKey = "4097e111160ea3c27318e80b04263a31"; // TMDb API key
+const apiKey = process.env.TMDB_API_KEY || "4097e111160ea3c27318e80b04263a31"; // TMDb API key from environment variable
 let displayedMedia = []; // Track media that has already been displayed
 
 // Function to adjust the image size dynamically
@@ -43,13 +63,15 @@ const loadGenres = async () => {
   try {
     const response = await fetch("./data.json"); // Ensure the path is correct
     if (!response.ok) {
-      throw new Error("Failed to load genres");
+      throw new Error(`Failed to load genres: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
     const selectedMediaType = mediaTypeSelect.value; // Get the selected media type
     const genres = data.genres[selectedMediaType]; // Load genres based on media type
     populateGenreSelect(genres);
   } catch (err) {
+    errorMessage.textContent = "Failed to load genres. Please refresh the page.";
+    errorMessage.classList.remove("hidden");
     console.error("Error loading genres:", err);
   }
 };
@@ -67,13 +89,21 @@ const populateGenreSelect = (genres) => {
 
 // Fetch data with error handling
 const fetchWithErrorHandling = async (url) => {
-  console.log("Fetching URL:", url); // Log the URL being fetched
-  const response = await fetch(url);
-  console.log("Response Status:", response.status); // Log the response status
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  try {
+    console.log("Fetching URL:", url); // Log the URL being fetched
+    const response = await fetch(url);
+    console.log("Response Status:", response.status); // Log the response status
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("Rate limit exceeded. Please try again in a moment.");
+      }
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Fetch error:", error);
+    throw error;
   }
-  return response.json();
 };
 
 // Get the rating for a movie or TV show
@@ -287,8 +317,7 @@ discoverButton.addEventListener("click", async () => {
   }); // Log the selected filters
 
   if (!selectedGenre) {
-    errorMessage.textContent = "Please select a genre first";
-    errorMessage.classList.remove("hidden");
+    showError("Please select a genre first");
     return;
   }
 
@@ -378,8 +407,7 @@ discoverButton.addEventListener("click", async () => {
     checkmarkContainer.classList.remove("hidden");
   } catch (err) {
     console.error("Error in discoverButton event listener:", err); // Log the error
-    errorMessage.textContent = `Error: ${err.message}`;
-    errorMessage.classList.remove("hidden");
+    showError(err.message);
     movieResult.innerHTML =
       '<p class="text-xl">Select a genre and media type to discover your next favorite</p>';
   } finally {
@@ -395,8 +423,7 @@ searchButton.addEventListener("click", async () => {
   console.log("Search Query:", query); // Log the search query
 
   if (!query) {
-    errorMessage.textContent = "Please enter a search term";
-    errorMessage.classList.remove("hidden");
+    showError("Please enter a search term");
     return;
   }
 
@@ -453,8 +480,7 @@ searchButton.addEventListener("click", async () => {
     checkmarkContainer.classList.remove("hidden");
   } catch (err) {
     console.error("Error searching for media:", err); // Log the error
-    errorMessage.textContent = `Error: ${err.message}`;
-    errorMessage.classList.remove("hidden");
+    showError(err.message);
     movieResult.innerHTML =
       '<p class="text-xl">No results found. Try a different search term.</p>';
   } finally {
@@ -464,24 +490,16 @@ searchButton.addEventListener("click", async () => {
 });
 
 // Live search functionality
-searchInput.addEventListener("input", async (event) => {
+searchInput.addEventListener("input", debounce(async (event) => {
   const query = event.target.value.trim();
-
   if (query.length < 3) {
     searchSuggestions.classList.add("hidden");
     return;
   }
 
   try {
-    const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(
-      query
-    )}&include_adult=false`;
-
-    console.log("Live Search URL:", searchUrl); // Log the API URL
-
+    const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`;
     const searchData = await fetchWithErrorHandling(searchUrl);
-
-    console.log("Live Search Response:", searchData); // Log the API response
 
     if (searchData.results.length === 0) {
       searchSuggestions.classList.add("hidden");
@@ -507,6 +525,8 @@ searchInput.addEventListener("input", async (event) => {
             class="p-3 hover:bg-gray-700 cursor-pointer" 
             data-id="${result.id}" 
             data-type="${result.media_type}"
+            role="option"
+            aria-selected="false"
           >
             ${result.title || result.name} (${result.media_type})
           </div>
@@ -519,7 +539,7 @@ searchInput.addEventListener("input", async (event) => {
     console.error("Error fetching search suggestions:", err);
     searchSuggestions.classList.add("hidden");
   }
-});
+}, 300));
 
 // Event listener for clicking on search suggestions
 searchSuggestions.addEventListener("click", async (event) => {
@@ -566,8 +586,7 @@ searchSuggestions.addEventListener("click", async (event) => {
     checkmarkContainer.classList.remove("hidden");
   } catch (err) {
     console.error("Error fetching media details:", err); // Log the error
-    errorMessage.textContent = `Error: ${err.message}`;
-    errorMessage.classList.remove("hidden");
+    showError(err.message);
     movieResult.innerHTML =
       '<p class="text-xl">No results found. Try a different search term.</p>';
   } finally {

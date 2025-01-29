@@ -1,4 +1,10 @@
-const apiKey = "5a6c802c8add70016329db08b4995810";
+const apiKey = process.env.TMDB_API_KEY || "5a6c802c8add70016329db08b4995810";
+
+// Display user-friendly error
+const showError = (message) => {
+  errorMessage.textContent = message;
+  errorMessage.classList.remove("hidden");
+};
 
 // Initialize to the current month and year
 let today = new Date();
@@ -24,8 +30,8 @@ const errorMessage = document.getElementById("error-message");
  * @returns {Object} - An object containing the start and end dates in YYYY-MM-DD format.
  */
 function getMonthDates(year, month) {
-  const startDate = new Date(Date.UTC(year, month - 1, 1)); // Start of the month in UTC
-  const endDate = new Date(Date.UTC(year, month, 0)); // End of the month in UTC
+  const startDate = new Date(year, month - 1, 1); // Start of the month in local time
+  const endDate = new Date(year, month, 0); // End of the month in local time
   return {
     start: startDate.toISOString().split("T")[0], // Format as YYYY-MM-DD
     end: endDate.toISOString().split("T")[0], // Format as YYYY-MM-DD
@@ -84,6 +90,7 @@ async function fetchMovies(year, month) {
   const dates = getMonthDates(year, month);
   const cachedMovies = getCachedData(year, month);
   if (cachedMovies) {
+    loading.classList.add("hidden");
     renderMovies(cachedMovies);
     return;
   }
@@ -93,8 +100,7 @@ async function fetchMovies(year, month) {
     );
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch movies: ${response.status} ${response.statusText}`
-      );
+"Failed to fetch movies. Please try again later.");
     }
     const data = await response.json();
     const movies = data.results.filter((movie) => {
@@ -102,23 +108,18 @@ async function fetchMovies(year, month) {
         console.log(`Movie ${movie.title} has no release date.`);
         return false;
       }
-      const releaseDate = new Date(movie.release_date + "T00:00:00Z"); // Parse as UTC
+      const releaseDate = new Date(movie.release_date);
       if (isNaN(releaseDate.getTime())) {
-        console.log(
-          `Movie ${movie.title} has invalid release date: ${movie.release_date}`
-        );
+        console.log(`Movie ${movie.title} has invalid release date: ${movie.release_date}`);
         return false;
       }
-      const monthCheck = releaseDate.getUTCMonth() === month - 1; // Use getUTCMonth()
-      const yearCheck = releaseDate.getUTCFullYear() === year; // Use getUTCFullYear()
-      return monthCheck && yearCheck;
-    });
+      return releaseDate.getMonth() === month - 1 && releaseDate.getFullYear() === year;
+    }); 
     setCachedData(year, month, movies);
     renderMovies(movies);
   } catch (error) {
     console.error("Error fetching movies:", error);
-    errorMessage.textContent = `Error: ${error.message}`;
-    errorMessage.classList.remove("hidden");
+    showError(error.message);
     loading.classList.add("hidden");
   }
 }
